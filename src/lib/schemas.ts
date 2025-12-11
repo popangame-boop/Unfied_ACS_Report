@@ -37,3 +37,10 @@ export const designerMasterSchema = z.object({
 });
 
 export type DesignerMaster = z.infer<typeof designerMasterSchema>;
+
+export const artworkTypeMasterSchema = z.object({
+  TypeName: z.string().min(1, { message: "Type Name is required." }),
+  created_at: z.string().optional(), // Read-only, handled by Supabase
+});
+
+export type ArtworkTypeMaster = z.infer<typeof artworkTypeMasterSchema>;
