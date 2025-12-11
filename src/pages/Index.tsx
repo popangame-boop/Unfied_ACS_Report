@@ -10,7 +10,11 @@ const Index = () => {
         <p className="text-xl text-gray-700 dark:text-gray-300 mb-6">
           Start building your amazing project here!
         </p>
-        {/* Tombol telah dihapus */}
+        <Link to="/unified-report-acs">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Go to Unified Report ACS
+          </Button>
+        </Link>
       </div>
       <MadeWithDyad />
     </div>
