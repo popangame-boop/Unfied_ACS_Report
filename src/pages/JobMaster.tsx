@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { JobMaster } from "@/lib/schemas";
+import type { JobMaster } from "@/lib/schemas"; // Diperbaiki: menggunakan import type
 import AddJobForm from "@/components/job-master/AddJobForm";
 import EditJobForm from "@/components/job-master/EditJobForm";
 import DeleteJobDialog from "@/components/job-master/DeleteJobDialog";
