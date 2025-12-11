@@ -28,3 +28,12 @@ export const artworkLogSchema = z.object({
 });
 
 export type ArtworkLog = z.infer<typeof artworkLogSchema>;
+
+export const designerMasterSchema = z.object({
+  DesignerID: z.string().min(1, { message: "Designer ID is required." }),
+  DesignerName: z.string().min(1, { message: "Designer Name is required." }),
+  Role: z.string().optional().nullable(),
+  Status: z.string().optional().nullable(),
+});
+
+export type DesignerMaster = z.infer<typeof designerMasterSchema>;
