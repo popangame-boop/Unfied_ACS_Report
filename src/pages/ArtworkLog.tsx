@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
 import { supabase } from "@/integrations/supabase/client";
 import type { ArtworkLog } from "@/lib/schemas";
 import AddArtworkLogForm from "@/components/artwork-log/AddArtworkLogForm";
@@ -180,7 +181,7 @@ const ArtworkLog = () => {
 
   if (isLoadingArtworkLogs || isLoadingJobIds || isLoadingCategories || isLoadingArtworkTypes || isLoadingDesigners) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <p>Loading artwork logs...</p>
       </div>
     );
@@ -188,19 +189,19 @@ const ArtworkLog = () => {
 
   if (isErrorArtworkLogs) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center text-red-500">
+      <div className="flex-1 flex items-center justify-center text-red-500">
         <p>Error loading artwork logs: {artworkLogsError?.message}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Artwork Log</h1>
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsAddModalOpen(true)}>Add Artwork Log</Button>
+            <Button onClick={() => setIsAddModalOpen(true)} className="bg-vibrant-purple hover:bg-vibrant-purple/90 text-white rounded-md shadow-sm">Add Artwork Log</Button>
           </DialogTrigger>
           <AddArtworkLogForm
             onSuccess={handleAddSuccess}
@@ -212,118 +213,131 @@ const ArtworkLog = () => {
         </Dialog>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by Job ID"
-            value={jobIdFilter}
-            onChange={(e) => setJobIdFilter(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by Category"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by Artwork Type"
-            value={artworkTypeFilter}
-            onChange={(e) => setArtworkTypeFilter(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Filter by Designer"
-            value={designerFilter}
-            onChange={(e) => setDesignerFilter(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
+      <Card className="rounded-xl shadow-subtle mb-6">
+        <CardHeader>
+          <CardTitle>Filter Artworks</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by Job ID"
+                value={jobIdFilter}
+                onChange={(e) => setJobIdFilter(e.target.value)}
+                className="pl-9 rounded-md focus-visible:ring-vibrant-purple"
+              />
+            </div>
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by Category"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="pl-9 rounded-md focus-visible:ring-vibrant-purple"
+              />
+            </div>
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by Artwork Type"
+                value={artworkTypeFilter}
+                onChange={(e) => setArtworkTypeFilter(e.target.value)}
+                className="pl-9 rounded-md focus-visible:ring-vibrant-purple"
+              />
+            </div>
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by Designer"
+                value={designerFilter}
+                onChange={(e) => setDesignerFilter(e.target.value)}
+                className="pl-9 rounded-md focus-visible:ring-vibrant-purple"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Artwork ID</TableHead>
-              <TableHead>Job ID</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Artwork Type</TableHead>
-              <TableHead>Artwork Title</TableHead>
-              <TableHead>Designer</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>Time Spent</TableHead>
-              <TableHead>Revision Count</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredArtworkLogs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={12} className="h-24 text-center">
-                  No artwork logs found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredArtworkLogs.map((log) => (
-                <TableRow key={log.ArtworkID}>
-                  <TableCell className="font-medium">{log.ArtworkID}</TableCell>
-                  <TableCell>{log.JobID}</TableCell>
-                  <TableCell>{log.Category}</TableCell>
-                  <TableCell>{log.ArtworkType}</TableCell>
-                  <TableCell>{log.ArtworkTitle}</TableCell>
-                  <TableCell>{log.Designer}</TableCell>
-                  <TableCell>
-                    {log.StartDate ? format(log.StartDate, "PPP") : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {log.EndDate ? format(log.EndDate, "PPP") : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {log.StartDate && log.EndDate
-                      ? calculateTimeSpent(log.StartDate, log.EndDate)
-                      : "N/A"}
-                  </TableCell>
-                  <TableCell>{log.RevisionCount}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {log.Notes}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(log)}
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => log.ArtworkID && handleDeleteClick(log.ArtworkID)}
-                      >
-                        <Trash2Icon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+      <Card className="rounded-xl shadow-subtle">
+        <CardContent className="p-0">
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Artwork ID</TableHead>
+                  <TableHead>Job ID</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Artwork Type</TableHead>
+                  <TableHead>Artwork Title</TableHead>
+                  <TableHead>Designer</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>Time Spent</TableHead>
+                  <TableHead>Revision Count</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredArtworkLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={12} className="h-24 text-center">
+                      No artwork logs found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredArtworkLogs.map((log) => (
+                    <TableRow key={log.ArtworkID}>
+                      <TableCell className="font-medium">{log.ArtworkID}</TableCell>
+                      <TableCell>{log.JobID}</TableCell>
+                      <TableCell>{log.Category}</TableCell>
+                      <TableCell>{log.ArtworkType}</TableCell>
+                      <TableCell>{log.ArtworkTitle}</TableCell>
+                      <TableCell>{log.Designer}</TableCell>
+                      <TableCell>
+                        {log.StartDate ? format(log.StartDate, "PPP") : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {log.EndDate ? format(log.EndDate, "PPP") : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {log.StartDate && log.EndDate
+                          ? calculateTimeSpent(log.StartDate, log.EndDate)
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>{log.RevisionCount}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {log.Notes}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(log)}
+                            className="rounded-md"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => log.ArtworkID && handleDeleteClick(log.ArtworkID)}
+                            className="rounded-md"
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedArtworkLog && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

@@ -233,11 +233,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        <Card>
+        <Card className="rounded-xl shadow-subtle">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Artwork Count</CardTitle>
           </CardHeader>
@@ -246,7 +246,7 @@ const Dashboard = () => {
             <p className="text-xs text-muted-foreground">Across all categories</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-xl shadow-subtle">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Artwork Time Spent</CardTitle>
           </CardHeader>
@@ -258,35 +258,35 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 mb-8">
-        <Card>
+        <Card className="rounded-xl shadow-subtle">
           <CardHeader>
             <CardTitle>Total Job Count by Category</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={jobCounts}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="category" />
-                <YAxis />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="category" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '0.5rem', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} />
                 <Legend />
-                <Bar dataKey="count" fill="#8884d8" name="Jobs" />
+                <Bar dataKey="count" fill="hsl(var(--vibrant-purple))" name="Jobs" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-xl shadow-subtle">
           <CardHeader>
             <CardTitle>Productivity by Designer</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={productivityByDesigner}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="designer" />
-                <YAxis />
-                <Tooltip formatter={(value, name) => {
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="designer" stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="hsl(var(--foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '0.5rem', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }} formatter={(value, name) => {
                   if (name === 'artworkCount') return [`${value} Artworks`, 'Artwork Count'];
                   if (name === 'totalMinutesSpent') {
                     const hours = Math.floor(Number(value) / 60);
@@ -296,15 +296,15 @@ const Dashboard = () => {
                   return [value, name];
                 }} />
                 <Legend />
-                <Bar dataKey="artworkCount" fill="#82ca9d" name="Artwork Count" />
-                <Bar dataKey="totalMinutesSpent" fill="#ffc658" name="Total Time Spent (min)" />
+                <Bar dataKey="artworkCount" fill="hsl(var(--vibrant-orange))" name="Artwork Count" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="totalMinutesSpent" fill="hsl(var(--vibrant-yellow))" name="Total Time Spent (min)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="mb-8">
+      <Card className="rounded-xl shadow-subtle mb-8">
         <CardHeader>
           <CardTitle>Recent 10 Artworks</CardTitle>
         </CardHeader>

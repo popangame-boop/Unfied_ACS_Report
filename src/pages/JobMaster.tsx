@@ -15,8 +15,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
 import { supabase } from "@/integrations/supabase/client";
-import type { JobMaster } from "@/lib/schemas"; // Diperbaiki: menggunakan import type
+import type { JobMaster } from "@/lib/schemas";
 import AddJobForm from "@/components/job-master/AddJobForm";
 import EditJobForm from "@/components/job-master/EditJobForm";
 import DeleteJobDialog from "@/components/job-master/DeleteJobDialog";
@@ -81,7 +82,7 @@ const JobMaster = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <p>Loading jobs...</p>
       </div>
     );
@@ -89,87 +90,93 @@ const JobMaster = () => {
 
   if (isError) {
     return (
-      <div className="flex-1 p-8 flex items-center justify-center text-red-500">
+      <div className="flex-1 flex items-center justify-center text-red-500">
         <p>Error loading jobs: {error?.message}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Job Master</h1>
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsAddModalOpen(true)}>Add Job</Button>
+            <Button onClick={() => setIsAddModalOpen(true)} className="bg-vibrant-purple hover:bg-vibrant-purple/90 text-white rounded-md shadow-sm">Add Job</Button>
           </DialogTrigger>
           <AddJobForm onSuccess={handleAddSuccess} />
         </Dialog>
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Job ID</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Job Title</TableHead>
-              <TableHead>Requester Department</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead>PIC Requester</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {jobs?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  No jobs found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              jobs?.map((job) => (
-                <TableRow key={job.JobID}>
-                  <TableCell className="font-medium">{job.JobID}</TableCell>
-                  <TableCell>{job.Category}</TableCell>
-                  <TableCell>{job.JobTitle}</TableCell>
-                  <TableCell>{job.RequesterDepartment}</TableCell>
-                  <TableCell>
-                    {job.StartDate ? format(job.StartDate, "PPP") : "N/A"}
-                  </TableCell>
-                  <TableCell>
-                    {job.EndDate ? format(job.EndDate, "PPP") : "N/A"}
-                  </TableCell>
-                  <TableCell>{job.PIC_Requester}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {job.Notes}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(job)}
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClick(job.JobID)}
-                      >
-                        <Trash2Icon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+      <Card className="rounded-xl shadow-subtle">
+        <CardContent className="p-0">
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Job ID</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Job Title</TableHead>
+                  <TableHead>Requester Department</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
+                  <TableHead>PIC Requester</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {jobs?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-24 text-center">
+                      No jobs found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  jobs?.map((job) => (
+                    <TableRow key={job.JobID}>
+                      <TableCell className="font-medium">{job.JobID}</TableCell>
+                      <TableCell>{job.Category}</TableCell>
+                      <TableCell>{job.JobTitle}</TableCell>
+                      <TableCell>{job.RequesterDepartment}</TableCell>
+                      <TableCell>
+                        {job.StartDate ? format(job.StartDate, "PPP") : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {job.EndDate ? format(job.EndDate, "PPP") : "N/A"}
+                      </TableCell>
+                      <TableCell>{job.PIC_Requester}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {job.Notes}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(job)}
+                            className="rounded-md"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(job.JobID)}
+                            className="rounded-md"
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedJob && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

@@ -62,11 +62,21 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Custom vibrant accent colors
+        vibrant: {
+          purple: "hsl(260 80% 60%)", // Example purple
+          orange: "hsl(28 95% 60%)",  // Example orange
+          yellow: "hsl(48 95% 60%)",  // Example yellow
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1rem", // Added for more rounded corners on cards
+      },
+      boxShadow: {
+        subtle: "0 4px 6px rgba(0, 0, 0, 0.05)", // Subtle shadow
       },
       keyframes: {
         "accordion-down": {

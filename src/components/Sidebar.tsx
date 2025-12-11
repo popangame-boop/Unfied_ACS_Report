@@ -3,21 +3,22 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { LayoutDashboard, Briefcase, FileText, Users, Palette, Settings, BarChart2 } from "lucide-react"; // Import icons
 
 const Sidebar = () => {
   const navItems = [
-    { name: "Dashboard", path: "/dashboard" },
-    { name: "Job Master", path: "/job-master" },
-    { name: "Artwork Log", path: "/artwork-log" },
-    { name: "Designer Master", path: "/designer-master" },
-    { name: "Artwork Type Master", path: "/artwork-type-master" },
-    { name: "System Lookup", path: "/system-lookup" },
-    { name: "Unified Report ACS", path: "/unified-report-acs" },
+    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Job Master", path: "/job-master", icon: Briefcase },
+    { name: "Artwork Log", path: "/artwork-log", icon: FileText },
+    { name: "Designer Master", path: "/designer-master", icon: Users },
+    { name: "Artwork Type Master", path: "/artwork-type-master", icon: Palette },
+    { name: "System Lookup", path: "/system-lookup", icon: Settings },
+    { name: "Unified Report ACS", path: "/unified-report-acs", icon: BarChart2 },
   ];
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground p-4 flex flex-col border-r border-sidebar-border h-screen sticky top-0">
-      <div className="text-2xl font-bold mb-6 text-sidebar-primary">ACS Reporting</div>
+    <aside className="w-64 bg-sidebar text-sidebar-foreground p-4 flex flex-col border-r border-sidebar-border h-screen sticky top-0 shadow-md">
+      <div className="text-2xl font-bold mb-8 text-sidebar-primary px-2">ACS Reporting</div>
       <nav className="flex-1">
         <ul className="space-y-2">
           {navItems.map((item) => (
@@ -26,13 +27,14 @@ const Sidebar = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center p-2 rounded-md text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    "flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                       : "text-sidebar-foreground"
                   )
                 }
               >
+                <item.icon className="h-5 w-5" />
                 {item.name}
               </NavLink>
             </li>
