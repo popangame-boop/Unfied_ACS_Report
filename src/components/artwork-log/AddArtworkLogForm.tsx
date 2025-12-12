@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { format, differenceInMinutes } from "date-fns";
+import { CalendarIcon, PlusCircleIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Dialog,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -37,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { artworkLogSchema, ArtworkLog } from "@/lib/schemas";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import AddDepartmentDialog from "./AddDepartmentDialog"; // Import the new component
 
 interface AddArtworkLogFormProps {
   onSuccess: () => void;
@@ -46,6 +50,17 @@ interface AddArtworkLogFormProps {
   designers: string[];
 }
 
+const fetchDepartmentList = async (): Promise<string[]> => {
+  const { data, error } = await supabase.from("system_lookup").select("DepartmentList").single();
+  if (error) {
+    if (error.code === 'PGRST116' || error.message.includes('null value in column "DepartmentList"')) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data?.DepartmentList || [];
+};
+
 const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
   onSuccess,
   jobIds,
@@ -53,6 +68,8 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
   artworkTypes,
   designers,
 }) => {
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
+
   const form = useForm<ArtworkLog>({
     resolver: zodResolver(artworkLogSchema),
     defaultValues: {
@@ -65,23 +82,60 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
       EndDate: undefined,
       RevisionCount: 0,
       Notes: "",
+      RequesterDepartment: "", // Initialize new field
     },
   });
 
+  const selectedCategory = form.watch("Category");
+  const startDate = form.watch("StartDate");
+  const endDate = form.watch("EndDate");
+
+  const { data: departmentList, isLoading: isLoadingDepartmentList, refetch: refetchDepartmentList } = useQuery<string[], Error>({
+    queryKey: ["departmentList"],
+    queryFn: fetchDepartmentList,
+  });
+
+  useEffect(() => {
+    // Reset conditional fields when category changes
+    if (selectedCategory === "Internal") {
+      form.setValue("JobID", null);
+    } else {
+      form.setValue("RequesterDepartment", null);
+    }
+  }, [selectedCategory, form]);
+
+  const calculateTimeSpent = (start: Date, end: Date | undefined): string | null => {
+    if (!start || !end) return null;
+    const minutes = differenceInMinutes(end, start);
+    if (minutes < 0) return "Invalid Dates"; // Handle cases where end date is before start date
+    if (minutes < 60) {
+      return `${minutes} min`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return `${hours} hr ${remainingMinutes} min`;
+    }
+  };
+
+  const timeSpentDisplay = React.useMemo(() => {
+    return calculateTimeSpent(startDate, endDate);
+  }, [startDate, endDate]);
+
   const onSubmit = async (values: ArtworkLog) => {
-    const { data, error } = await supabase.from("artwork_log").insert([
-      {
-        JobID: values.JobID,
-        Category: values.Category,
-        ArtworkType: values.ArtworkType,
-        ArtworkTitle: values.ArtworkTitle,
-        Designer: values.Designer,
-        StartDate: values.StartDate.toISOString(),
-        EndDate: values.EndDate ? values.EndDate.toISOString() : null,
-        RevisionCount: values.RevisionCount || 0,
-        Notes: values.Notes || null,
-      },
-    ]);
+    const payload = {
+      JobID: values.Category === "Internal" ? null : values.JobID,
+      Category: values.Category,
+      ArtworkType: values.ArtworkType,
+      ArtworkTitle: values.ArtworkTitle,
+      Designer: values.Designer,
+      StartDate: values.StartDate.toISOString(),
+      EndDate: values.EndDate ? values.EndDate.toISOString() : null,
+      RevisionCount: values.RevisionCount || 0,
+      Notes: values.Notes || null,
+      RequesterDepartment: values.Category === "Internal" ? values.RequesterDepartment : null,
+    };
+
+    const { data, error } = await supabase.from("artwork_log").insert([payload]);
 
     if (error) {
       showError(`Failed to add artwork log: ${error.message}`);
@@ -102,30 +156,6 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <FormField
-            control={form.control}
-            name="JobID"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job ID</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Job ID" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jobIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormField
             control={form.control}
             name="Category"
@@ -150,6 +180,75 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
               </FormItem>
             )}
           />
+
+          {(selectedCategory === "Project" || selectedCategory === "Lead") && (
+            <FormField
+              control={form.control}
+              name="JobID"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job ID</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Job ID" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedCategory === "Internal" && (
+            <FormField
+              control={form.control}
+              name="RequesterDepartment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Requester Department</FormLabel>
+                  <div className="flex items-center space-x-2">
+                    <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingDepartmentList ? (
+                          <SelectItem value="" disabled>Loading departments...</SelectItem>
+                        ) : (
+                          departmentList?.map((department) => (
+                            <SelectItem key={department} value={department}>
+                              {department}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={isAddDepartmentModalOpen} onOpenChange={setIsAddDepartmentModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={() => setIsAddDepartmentModalOpen(true)}>
+                          <PlusCircleIcon className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <AddDepartmentDialog onSuccess={refetchDepartmentList} onOpenChange={setIsAddDepartmentModalOpen} />
+                    </Dialog>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="ArtworkType"
@@ -287,6 +386,15 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
               </FormItem>
             )}
           />
+          {(selectedCategory === "Project" || selectedCategory === "Lead") && (
+            <FormItem>
+              <FormLabel>Time Spent</FormLabel>
+              <FormControl>
+                <Input value={timeSpentDisplay || "N/A"} disabled />
+              </FormControl>
+              <FormDescription>Calculated from Start Date and End Date.</FormDescription>
+            </FormItem>
+          )}
           <FormField
             control={form.control}
             name="RevisionCount"
