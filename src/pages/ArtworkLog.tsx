@@ -75,6 +75,17 @@ const fetchDesigners = async (): Promise<string[]> => {
   return data.map((item) => item.DesignerName);
 };
 
+const fetchDepartmentList = async (): Promise<string[]> => {
+  const { data, error } = await supabase
+    .from("system_lookup")
+    .select("DepartmentList")
+    .single(); // Assuming there's only one row for system lookups
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data?.DepartmentList || [];
+};
+
 const calculateTimeSpent = (startDate: Date, endDate: Date | null): string => {
   if (!endDate) return "N/A";
   const minutes = differenceInMinutes(endDate, startDate);
@@ -131,6 +142,11 @@ const ArtworkLog = () => {
     queryFn: fetchDesigners,
   });
 
+  const { data: departmentList, isLoading: isLoadingDepartmentList } = useQuery<string[], Error>({
+    queryKey: ["departmentList"],
+    queryFn: fetchDepartmentList,
+  });
+
   const handleAddSuccess = () => {
     setIsAddModalOpen(false);
     refetchArtworkLogs();
@@ -179,7 +195,7 @@ const ArtworkLog = () => {
     });
   }, [artworkLogs, categoryFilter, artworkTypeFilter, designerFilter, jobIdFilter]);
 
-  if (isLoadingArtworkLogs || isLoadingJobIds || isLoadingCategories || isLoadingArtworkTypes || isLoadingDesigners) {
+  if (isLoadingArtworkLogs || isLoadingJobIds || isLoadingCategories || isLoadingArtworkTypes || isLoadingDesigners || isLoadingDepartmentList) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <p>Loading artwork logs...</p>
@@ -209,6 +225,7 @@ const ArtworkLog = () => {
             categories={categories || []}
             artworkTypes={artworkTypes || []}
             designers={designers || []}
+            departmentList={departmentList || []}
           />
         </Dialog>
       </div>
@@ -276,13 +293,14 @@ const ArtworkLog = () => {
                   <TableHead>Time Spent</TableHead>
                   <TableHead>Revision Count</TableHead>
                   <TableHead>Notes</TableHead>
+                  <TableHead>Dept Requester</TableHead> {/* New column header */}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredArtworkLogs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="h-24 text-center">
+                    <TableCell colSpan={13} className="h-24 text-center">
                       No artwork logs found.
                     </TableCell>
                   </TableRow>
@@ -310,6 +328,7 @@ const ArtworkLog = () => {
                       <TableCell className="max-w-[200px] truncate">
                         {log.Notes}
                       </TableCell>
+                      <TableCell>{log.DeptRequester || "N/A"}</TableCell> {/* Display DeptRequester */}
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button
@@ -348,6 +367,7 @@ const ArtworkLog = () => {
             categories={categories || []}
             artworkTypes={artworkTypes || []}
             designers={designers || []}
+            departmentList={departmentList || []}
           />
         </Dialog>
       )}

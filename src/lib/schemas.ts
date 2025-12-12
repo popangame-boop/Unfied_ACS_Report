@@ -22,7 +22,7 @@ export type JobMaster = z.infer<typeof jobMasterSchema>;
 
 export const artworkLogSchema = z.object({
   ArtworkID: z.number().optional(), // Auto-incremented, optional for insert
-  JobID: z.string().min(1, { message: "Job ID is required." }),
+  JobID: z.string().optional().nullable(), // Made optional and nullable for 'Internal' category
   Category: z.string().min(1, { message: "Category is required." }),
   ArtworkType: z.string().min(1, { message: "Artwork Type is required." }),
   ArtworkTitle: z.string().min(1, { message: "Artwork Title is required." }),

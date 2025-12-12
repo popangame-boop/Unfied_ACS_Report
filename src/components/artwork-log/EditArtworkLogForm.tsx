@@ -45,6 +45,7 @@ interface EditArtworkLogFormProps {
   categories: string[];
   artworkTypes: string[];
   designers: string[];
+  departmentList: string[];
 }
 
 const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
@@ -54,6 +55,7 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
   categories,
   artworkTypes,
   designers,
+  departmentList,
 }) => {
   const form = useForm<ArtworkLog>({
     resolver: zodResolver(artworkLogSchema),
@@ -62,6 +64,7 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
       StartDate: artworkLog.StartDate ? new Date(artworkLog.StartDate) : new Date(),
       EndDate: artworkLog.EndDate ? new Date(artworkLog.EndDate) : undefined,
       RevisionCount: artworkLog.RevisionCount ?? 0,
+      DeptRequester: artworkLog.DeptRequester || "", // Initialize new field
     },
   });
 
@@ -71,14 +74,17 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
       StartDate: artworkLog.StartDate ? new Date(artworkLog.StartDate) : new Date(),
       EndDate: artworkLog.EndDate ? new Date(artworkLog.EndDate) : undefined,
       RevisionCount: artworkLog.RevisionCount ?? 0,
+      DeptRequester: artworkLog.DeptRequester || "",
     });
   }, [artworkLog, form]);
+
+  const selectedCategory = form.watch("Category");
 
   const onSubmit = async (values: ArtworkLog) => {
     const { data, error } = await supabase
       .from("artwork_log")
       .update({
-        JobID: values.JobID,
+        JobID: selectedCategory === "Internal" ? null : values.JobID, // Set JobID to null for Internal category
         Category: values.Category,
         ArtworkType: values.ArtworkType,
         ArtworkTitle: values.ArtworkTitle,
@@ -87,6 +93,7 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
         EndDate: values.EndDate ? values.EndDate.toISOString() : null,
         RevisionCount: values.RevisionCount || 0,
         Notes: values.Notes || null,
+        DeptRequester: selectedCategory === "Internal" ? values.DeptRequester || null : null, // Include DeptRequester for Internal category
       })
       .eq("ArtworkID", artworkLog.ArtworkID);
 
@@ -123,30 +130,6 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
           />
           <FormField
             control={form.control}
-            name="JobID"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job ID</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Job ID" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jobIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="Category"
             render={({ field }) => (
               <FormItem>
@@ -169,6 +152,61 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
               </FormItem>
             )}
           />
+
+          {selectedCategory !== "Internal" && (
+            <FormField
+              control={form.control}
+              name="JobID"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job ID</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Job ID" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedCategory === "Internal" && (
+            <FormField
+              control={form.control}
+              name="DeptRequester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department Requester</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Department" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {departmentList.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="ArtworkType"

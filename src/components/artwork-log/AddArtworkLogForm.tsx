@@ -44,6 +44,7 @@ interface AddArtworkLogFormProps {
   categories: string[];
   artworkTypes: string[];
   designers: string[];
+  departmentList: string[];
 }
 
 const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
@@ -52,6 +53,7 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
   categories,
   artworkTypes,
   designers,
+  departmentList,
 }) => {
   const form = useForm<ArtworkLog>({
     resolver: zodResolver(artworkLogSchema),
@@ -65,13 +67,16 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
       EndDate: undefined,
       RevisionCount: 0,
       Notes: "",
+      DeptRequester: "", // Initialize new field
     },
   });
+
+  const selectedCategory = form.watch("Category");
 
   const onSubmit = async (values: ArtworkLog) => {
     const { data, error } = await supabase.from("artwork_log").insert([
       {
-        JobID: values.JobID,
+        JobID: selectedCategory === "Internal" ? null : values.JobID, // Set JobID to null for Internal category
         Category: values.Category,
         ArtworkType: values.ArtworkType,
         ArtworkTitle: values.ArtworkTitle,
@@ -80,6 +85,7 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
         EndDate: values.EndDate ? values.EndDate.toISOString() : null,
         RevisionCount: values.RevisionCount || 0,
         Notes: values.Notes || null,
+        DeptRequester: selectedCategory === "Internal" ? values.DeptRequester || null : null, // Include DeptRequester for Internal category
       },
     ]);
 
@@ -104,30 +110,6 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
           <FormField
             control={form.control}
-            name="JobID"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job ID</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Job ID" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jobIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="Category"
             render={({ field }) => (
               <FormItem>
@@ -150,6 +132,61 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
               </FormItem>
             )}
           />
+
+          {selectedCategory !== "Internal" && (
+            <FormField
+              control={form.control}
+              name="JobID"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job ID</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Job ID" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedCategory === "Internal" && (
+            <FormField
+              control={form.control}
+              name="DeptRequester"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department Requester</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Department" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {departmentList.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="ArtworkType"
