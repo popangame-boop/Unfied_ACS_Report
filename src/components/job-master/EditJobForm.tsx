@@ -3,9 +3,9 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,8 +27,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { jobMasterSchema, JobMaster } from "@/lib/schemas";
+import { jobMasterSchema, JobMaster, DesignerMaster } from "@/lib/schemas";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -36,6 +43,23 @@ interface EditJobFormProps {
   job: JobMaster;
   onSuccess: () => void;
 }
+
+const fetchDesigners = async (): Promise<DesignerMaster[]> => {
+  const { data, error } = await supabase.from("designer_master").select("DesignerName");
+  if (error) throw new Error(error.message);
+  return data.map(d => ({ DesignerName: d.DesignerName, DesignerID: d.DesignerName }));
+};
+
+const fetchDepartmentList = async (): Promise<string[]> => {
+  const { data, error } = await supabase.from("system_lookup").select("DepartmentList").single();
+  if (error) {
+    if (error.code === 'PGRST116' || error.message.includes('null value in column "DepartmentList"')) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data?.DepartmentList || [];
+};
 
 const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
   const form = useForm<JobMaster>({
@@ -47,6 +71,18 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
     },
   });
 
+  const selectedCategory = form.watch("Category");
+
+  const { data: designers, isLoading: isLoadingDesigners } = useQuery<DesignerMaster[], Error>({
+    queryKey: ["designers"],
+    queryFn: fetchDesigners,
+  });
+
+  const { data: departmentList, isLoading: isLoadingDepartmentList } = useQuery<string[], Error>({
+    queryKey: ["departmentList"],
+    queryFn: fetchDepartmentList,
+  });
+
   useEffect(() => {
     form.reset({
       ...job,
@@ -56,17 +92,24 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
   }, [job, form]);
 
   const onSubmit = async (values: JobMaster) => {
-    const { data, error } = await supabase
+    const payload = {
+      Category: values.Category,
+      JobTitle: values.JobTitle,
+      StartDate: values.StartDate.toISOString(),
+      EndDate: values.EndDate ? values.EndDate.toISOString() : null,
+      Notes: values.Notes || null,
+      
+      // Conditional fields
+      RequesterDepartment: values.Category === "Lead" ? null : values.RequesterDepartment || null,
+      PIC_Requester: values.Category === "Project" ? null : values.PIC_Requester || null,
+      ProjectType: values.Category === "Project" ? values.ProjectType || null : null,
+      PIC_Project: values.Category === "Project" ? values.PIC_Project || null : null,
+      LeadGrade: values.Category === "Lead" ? values.LeadGrade || null : null,
+    };
+
+    const { error } = await supabase
       .from("job_master")
-      .update({
-        Category: values.Category,
-        JobTitle: values.JobTitle,
-        RequesterDepartment: values.RequesterDepartment || null,
-        StartDate: values.StartDate.toISOString(),
-        EndDate: values.EndDate ? values.EndDate.toISOString() : null,
-        PIC_Requester: values.PIC_Requester || null,
-        Notes: values.Notes || null,
-      })
+      .update(payload)
       .eq("JobID", job.JobID);
 
     if (error) {
@@ -76,6 +119,9 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
       onSuccess();
     }
   };
+
+  const projectTypes = ["Event", "Travel", "Wellness", "Other"];
+  const leadGrades = ["A", "B", "C", "D"];
 
   return (
     <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -106,9 +152,19 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Category</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="Project">Project</SelectItem>
+                    <SelectItem value="Lead">Lead</SelectItem>
+                    <SelectItem value="Internal">Internal</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -126,19 +182,181 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="RequesterDepartment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Requester Department</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
+          {selectedCategory === "Project" && (
+            <>
+              <FormField
+                control={form.control}
+                name="ProjectType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Project Type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projectTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="PIC_Project"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIC Project</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a PIC Project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingDesigners ? (
+                          <SelectItem value="" disabled>Loading designers...</SelectItem>
+                        ) : (
+                          designers?.map((designer) => (
+                            <SelectItem key={designer.DesignerID} value={designer.DesignerName}>
+                              {designer.DesignerName}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="RequesterDepartment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requester Department</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {selectedCategory === "Lead" && (
+            <>
+              <FormField
+                control={form.control}
+                name="LeadGrade"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lead Grade</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Lead Grade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {leadGrades.map((grade) => (
+                          <SelectItem key={grade} value={grade}>
+                            {grade}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="PIC_Requester"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIC Requester</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {selectedCategory === "Internal" && (
+            <FormField
+              control={form.control}
+              name="RequesterDepartment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Requester Department</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Department" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {isLoadingDepartmentList ? (
+                        <SelectItem value="" disabled>Loading departments...</SelectItem>
+                      ) : (
+                        departmentList?.map((department) => (
+                          <SelectItem key={department} value={department}>
+                            {department}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedCategory !== "Project" && selectedCategory !== "Lead" && selectedCategory !== "Internal" && (
+            <>
+              <FormField
+                control={form.control}
+                name="RequesterDepartment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requester Department</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="PIC_Requester"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PIC Requester</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
           <FormField
             control={form.control}
             name="StartDate"
@@ -211,19 +429,6 @@ const EditJobForm: React.FC<EditJobFormProps> = ({ job, onSuccess }) => {
                     />
                   </PopoverContent>
                 </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="PIC_Requester"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>PIC Requester</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
