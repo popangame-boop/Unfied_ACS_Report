@@ -74,7 +74,7 @@ const EditDepartmentForm: React.FC<EditDepartmentFormProps> = ({
 
     const { data: currentLookup, error: fetchError } = await supabase
       .from("system_lookup")
-      .select("DepartmentList")
+      .select("DepartmentList, created_at") // Include created_at here
       .single();
 
     if (fetchError) {
@@ -89,7 +89,7 @@ const EditDepartmentForm: React.FC<EditDepartmentFormProps> = ({
     const { error } = await supabase
       .from("system_lookup")
       .update({ DepartmentList: updatedDepartmentList })
-      .eq("created_at", currentLookup.created_at); // Assuming created_at is a unique identifier for the single row
+      .eq("created_at", currentLookup.created_at); // created_at is now available
 
     if (error) {
       showError(`Failed to update department: ${error.message}`);
