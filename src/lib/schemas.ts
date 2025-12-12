@@ -9,6 +9,13 @@ export const jobMasterSchema = z.object({
   EndDate: z.date().optional().nullable(),
   PIC_Requester: z.string().optional().nullable(),
   Notes: z.string().optional().nullable(),
+  // New conditional fields for Job Master
+  ProjectType: z.string().optional().nullable(), // For 'Project' category
+  PIC_Project: z.string().optional().nullable(), // For 'Project' category
+  LeadGrade: z.string().optional().nullable(), // For 'Lead' category
+  ClientName: z.string().optional().nullable(), // For 'Lead' category
+  CustomBrief: z.string().optional().nullable(), // For 'Lead' category
+  LinkOnedrive: z.string().optional().nullable(), // For 'Lead' category
 });
 
 export type JobMaster = z.infer<typeof jobMasterSchema>;
@@ -25,6 +32,8 @@ export const artworkLogSchema = z.object({
   TimeSpent: z.string().optional().nullable(), // Calculated, not stored directly
   RevisionCount: z.number().int().min(0).default(0).optional().nullable(),
   Notes: z.string().optional().nullable(),
+  // New field for Internal tasks in ArtworkLog
+  DeptRequester: z.string().optional().nullable(), // For 'Internal' category
 });
 
 export type ArtworkLog = z.infer<typeof artworkLogSchema>;
