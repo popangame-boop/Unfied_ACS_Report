@@ -10,6 +10,7 @@ import JobMaster from "./pages/JobMaster";
 import ArtworkLog from "./pages/ArtworkLog";
 import DesignerMaster from "./pages/DesignerMaster";
 import ArtworkTypeMaster from "./pages/ArtworkTypeMaster";
+import LeadSubmission from "./pages/LeadSubmission"; // Import the new LeadSubmission page
 import Layout from "./components/Layout";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} /> {/* Index will redirect to /dashboard */}
+          <Route path="/lead-submission" element={<LeadSubmission />} /> {/* Public Lead Submission Page */}
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/job-master" element={<JobMaster />} />

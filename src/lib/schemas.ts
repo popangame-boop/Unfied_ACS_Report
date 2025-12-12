@@ -53,3 +53,14 @@ export const artworkTypeMasterSchema = z.object({
 });
 
 export type ArtworkTypeMaster = z.infer<typeof artworkTypeMasterSchema>;
+
+export const leadSubmissionFormSchema = z.object({
+  ClientName: z.string().min(1, { message: "Client Name is required." }),
+  PIC_Requester: z.string().min(1, { message: "PIC Requester is required." }),
+  LeadGrade: z.enum(["A", "B", "C", "D"], { required_error: "Lead Grade is required." }),
+  CustomBrief: z.string().optional().nullable(),
+  LinkOnedrive: z.string().optional().nullable(),
+  JobTitle: z.string().min(1, { message: "Job Title is required." }),
+});
+
+export type LeadSubmissionForm = z.infer<typeof leadSubmissionFormSchema>;
