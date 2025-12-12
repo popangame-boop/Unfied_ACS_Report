@@ -1,18 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, PlusCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -37,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { artworkLogSchema, ArtworkLog } from "@/lib/schemas";
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
+import AddDepartmentForm from "@/components/system-lookup/AddDepartmentForm"; // New import
 
 interface AddArtworkLogFormProps {
   onSuccess: () => void;
@@ -46,6 +50,17 @@ interface AddArtworkLogFormProps {
   designers: string[];
 }
 
+const fetchDepartmentList = async (): Promise<string[]> => {
+  const { data, error } = await supabase.from("system_lookup").select("DepartmentList").single();
+  if (error) {
+    if (error.code === 'PGRST116' || error.message.includes('null value in column "DepartmentList"')) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data?.DepartmentList || [];
+};
+
 const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
   onSuccess,
   jobIds,
@@ -53,6 +68,8 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
   artworkTypes,
   designers,
 }) => {
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
+
   const form = useForm<ArtworkLog>({
     resolver: zodResolver(artworkLogSchema),
     defaultValues: {
@@ -65,23 +82,41 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
       EndDate: undefined,
       RevisionCount: 0,
       Notes: "",
+      RequesterDepartment: "", // Initialize new field
     },
   });
 
+  const selectedCategory = form.watch("Category");
+
+  const { data: departmentList, isLoading: isLoadingDepartmentList, refetch: refetchDepartmentList } = useQuery<string[], Error>({
+    queryKey: ["departmentList"],
+    queryFn: fetchDepartmentList,
+  });
+
+  useEffect(() => {
+    // Reset conditional fields when category changes
+    if (selectedCategory === "Internal") {
+      form.setValue("JobID", null);
+    } else {
+      form.setValue("RequesterDepartment", null);
+    }
+  }, [selectedCategory, form]);
+
   const onSubmit = async (values: ArtworkLog) => {
-    const { data, error } = await supabase.from("artwork_log").insert([
-      {
-        JobID: values.JobID,
-        Category: values.Category,
-        ArtworkType: values.ArtworkType,
-        ArtworkTitle: values.ArtworkTitle,
-        Designer: values.Designer,
-        StartDate: values.StartDate.toISOString(),
-        EndDate: values.EndDate ? values.EndDate.toISOString() : null,
-        RevisionCount: values.RevisionCount || 0,
-        Notes: values.Notes || null,
-      },
-    ]);
+    const payload = {
+      JobID: selectedCategory === "Internal" ? null : values.JobID,
+      Category: values.Category,
+      ArtworkType: values.ArtworkType,
+      ArtworkTitle: values.ArtworkTitle,
+      Designer: values.Designer,
+      StartDate: values.StartDate.toISOString(),
+      EndDate: values.EndDate ? values.EndDate.toISOString() : null,
+      RevisionCount: values.RevisionCount || 0,
+      Notes: values.Notes || null,
+      RequesterDepartment: selectedCategory === "Internal" ? values.RequesterDepartment : null,
+    };
+
+    const { data, error } = await supabase.from("artwork_log").insert([payload]);
 
     if (error) {
       showError(`Failed to add artwork log: ${error.message}`);
@@ -90,6 +125,11 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
       onSuccess();
       form.reset();
     }
+  };
+
+  const handleAddDepartmentSuccess = () => {
+    setIsAddDepartmentModalOpen(false);
+    refetchDepartmentList(); // Refetch departments after adding a new one
   };
 
   return (
@@ -104,30 +144,6 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
           <FormField
             control={form.control}
-            name="JobID"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job ID</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a Job ID" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {jobIds.map((id) => (
-                      <SelectItem key={id} value={id}>
-                        {id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="Category"
             render={({ field }) => (
               <FormItem>
@@ -139,17 +155,86 @@ const AddArtworkLogForm: React.FC<AddArtworkLogFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="Project">Project</SelectItem>
+                    <SelectItem value="Lead">Lead</SelectItem>
+                    <SelectItem value="Internal">Internal</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {selectedCategory !== "Internal" && (
+            <FormField
+              control={form.control}
+              name="JobID"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job ID</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Job ID" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobIds.map((id) => (
+                        <SelectItem key={id} value={id}>
+                          {id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedCategory === "Internal" && (
+            <FormField
+              control={form.control}
+              name="RequesterDepartment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Requester Department</FormLabel>
+                  <div className="flex items-center space-x-2">
+                    <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Department" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingDepartmentList ? (
+                          <SelectItem value="" disabled>Loading departments...</SelectItem>
+                        ) : (
+                          departmentList?.map((department) => (
+                            <SelectItem key={department} value={department}>
+                              {department}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Dialog open={isAddDepartmentModalOpen} onOpenChange={setIsAddDepartmentModalOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={() => setIsAddDepartmentModalOpen(true)}>
+                          <PlusCircle className="h-4 w-4" />
+                          <span className="sr-only">Add Department</span>
+                        </Button>
+                      </DialogTrigger>
+                      <AddDepartmentForm onSuccess={handleAddDepartmentSuccess} existingDepartments={departmentList || []} />
+                    </Dialog>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="ArtworkType"
