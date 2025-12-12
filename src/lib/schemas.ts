@@ -72,7 +72,7 @@ export type JobMaster = z.infer<typeof jobMasterSchema>;
 
 export const artworkLogSchema = z.object({
   ArtworkID: z.number().optional(), // Auto-incremented, optional for insert
-  JobID: z.string().optional().nullable(), // Made optional and nullable for conditional rendering
+  JobID: z.string().min(1, { message: "Job ID is required." }),
   Category: z.string().min(1, { message: "Category is required." }),
   ArtworkType: z.string().min(1, { message: "Artwork Type is required." }),
   ArtworkTitle: z.string().min(1, { message: "Artwork Title is required." }),
@@ -82,39 +82,6 @@ export const artworkLogSchema = z.object({
   TimeSpent: z.string().optional().nullable(), // Calculated, not stored directly
   RevisionCount: z.number().int().min(0).default(0).optional().nullable(),
   Notes: z.string().optional().nullable(),
-  RequesterDepartment: z.string().optional().nullable(), // New field for Internal category
-}).superRefine((data, ctx) => {
-  if (data.Category === "Internal") {
-    if (data.JobID) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Job ID should not be set for 'Internal' category.",
-        path: ["JobID"],
-      });
-    }
-    if (!data.RequesterDepartment) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Requester Department is required for 'Internal' category.",
-        path: ["RequesterDepartment"],
-      });
-    }
-  } else if (data.Category === "Project" || data.Category === "Lead") {
-    if (!data.JobID) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Job ID is required for 'Project' or 'Lead' categories.",
-        path: ["JobID"],
-      });
-    }
-    if (data.RequesterDepartment) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Requester Department should not be set for 'Project' or 'Lead' categories.",
-        path: ["RequesterDepartment"],
-      });
-    }
-  }
 });
 
 export type ArtworkLog = z.infer<typeof artworkLogSchema>;
