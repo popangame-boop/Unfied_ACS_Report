@@ -10,6 +10,7 @@ import JobMaster from "./pages/JobMaster";
 import ArtworkLog from "./pages/ArtworkLog";
 import DesignerMaster from "./pages/DesignerMaster";
 import ArtworkTypeMaster from "./pages/ArtworkTypeMaster";
+import SystemLookup from "./pages/SystemLookup"; // New import
 import Layout from "./components/Layout";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/artwork-log" element={<ArtworkLog />} />
             <Route path="/designer-master" element={<DesignerMaster />} />
             <Route path="/artwork-type-master" element={<ArtworkTypeMaster />} />
+            <Route path="/system-lookup" element={<SystemLookup />} /> {/* New route */}
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

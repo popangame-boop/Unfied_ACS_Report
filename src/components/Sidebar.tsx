@@ -3,7 +3,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, FileText, Users, Palette } from "lucide-react"; // Import icons
+import { LayoutDashboard, Briefcase, FileText, Users, Palette, Settings } from "lucide-react"; // Import Settings icon
 
 const Sidebar = () => {
   const navItems = [
@@ -12,6 +12,7 @@ const Sidebar = () => {
     { name: "Artwork Log", path: "/artwork-log", icon: FileText },
     { name: "Designer Master", path: "/designer-master", icon: Users },
     { name: "Artwork Type Master", path: "/artwork-type-master", icon: Palette },
+    { name: "System Lookup", path: "/system-lookup", icon: Settings }, // New nav item
   ];
 
   return (
