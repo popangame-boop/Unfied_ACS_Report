@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,17 +47,6 @@ interface EditArtworkLogFormProps {
   designers: string[];
 }
 
-const fetchDepartmentList = async (): Promise<string[]> => {
-  const { data, error } = await supabase.from("system_lookup").select("DepartmentList").single();
-  if (error) {
-    if (error.code === 'PGRST116' || error.message.includes('null value in column "DepartmentList"')) {
-      return [];
-    }
-    throw new Error(error.message);
-  }
-  return data?.DepartmentList || [];
-};
-
 const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
   artworkLog,
   onSuccess,
@@ -74,15 +62,7 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
       StartDate: artworkLog.StartDate ? new Date(artworkLog.StartDate) : new Date(),
       EndDate: artworkLog.EndDate ? new Date(artworkLog.EndDate) : undefined,
       RevisionCount: artworkLog.RevisionCount ?? 0,
-      RequesterDepartment: artworkLog.RequesterDepartment ?? "", // Initialize new field
     },
-  });
-
-  const selectedCategory = form.watch("Category");
-
-  const { data: departmentList, isLoading: isLoadingDepartmentList } = useQuery<string[], Error>({
-    queryKey: ["departmentList"],
-    queryFn: fetchDepartmentList,
   });
 
   useEffect(() => {
@@ -91,27 +71,23 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
       StartDate: artworkLog.StartDate ? new Date(artworkLog.StartDate) : new Date(),
       EndDate: artworkLog.EndDate ? new Date(artworkLog.EndDate) : undefined,
       RevisionCount: artworkLog.RevisionCount ?? 0,
-      RequesterDepartment: artworkLog.RequesterDepartment ?? "",
     });
   }, [artworkLog, form]);
 
   const onSubmit = async (values: ArtworkLog) => {
-    const payload = {
-      JobID: selectedCategory === "Internal" ? null : values.JobID,
-      Category: values.Category,
-      ArtworkType: values.ArtworkType,
-      ArtworkTitle: values.ArtworkTitle,
-      Designer: values.Designer,
-      StartDate: values.StartDate.toISOString(),
-      EndDate: values.EndDate ? values.EndDate.toISOString() : null,
-      RevisionCount: values.RevisionCount || 0,
-      Notes: values.Notes || null,
-      RequesterDepartment: selectedCategory === "Internal" ? values.RequesterDepartment : null,
-    };
-
     const { data, error } = await supabase
       .from("artwork_log")
-      .update(payload)
+      .update({
+        JobID: values.JobID,
+        Category: values.Category,
+        ArtworkType: values.ArtworkType,
+        ArtworkTitle: values.ArtworkTitle,
+        Designer: values.Designer,
+        StartDate: values.StartDate.toISOString(),
+        EndDate: values.EndDate ? values.EndDate.toISOString() : null,
+        RevisionCount: values.RevisionCount || 0,
+        Notes: values.Notes || null,
+      })
       .eq("ArtworkID", artworkLog.ArtworkID);
 
     if (error) {
@@ -147,6 +123,30 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
           />
           <FormField
             control={form.control}
+            name="JobID"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Job ID</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a Job ID" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {jobIds.map((id) => (
+                      <SelectItem key={id} value={id}>
+                        {id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
             name="Category"
             render={({ field }) => (
               <FormItem>
@@ -158,75 +158,17 @@ const EditArtworkLogForm: React.FC<EditArtworkLogFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Project">Project</SelectItem>
-                    <SelectItem value="Lead">Lead</SelectItem>
-                    <SelectItem value="Internal">Internal</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
               </FormItem>
             )}
           />
-
-          {selectedCategory !== "Internal" && (
-            <FormField
-              control={form.control}
-              name="JobID"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job ID</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Job ID" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {jobIds.map((id) => (
-                        <SelectItem key={id} value={id}>
-                          {id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {selectedCategory === "Internal" && (
-            <FormField
-              control={form.control}
-              name="RequesterDepartment"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Requester Department</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a Department" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoadingDepartmentList ? (
-                        <SelectItem value="" disabled>Loading departments...</SelectItem>
-                      ) : (
-                        departmentList?.map((department) => (
-                          <SelectItem key={department} value={department}>
-                            {department}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
           <FormField
             control={form.control}
             name="ArtworkType"
