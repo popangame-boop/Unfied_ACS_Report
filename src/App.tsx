@@ -11,6 +11,7 @@ import ArtworkLog from "./pages/ArtworkLog";
 import DesignerMaster from "./pages/DesignerMaster";
 import ArtworkTypeMaster from "./pages/ArtworkTypeMaster";
 import LeadSubmission from "./pages/LeadSubmission"; // Import the new LeadSubmission page
+import ProjectTypeMaster from "./pages/ProjectTypeMaster"; // Import the new ProjectTypeMaster page
 import Layout from "./components/Layout";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/artwork-log" element={<ArtworkLog />} />
             <Route path="/designer-master" element={<DesignerMaster />} />
             <Route path="/artwork-type-master" element={<ArtworkTypeMaster />} />
+            <Route path="/project-type-master" element={<ProjectTypeMaster />} /> {/* New route */}
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

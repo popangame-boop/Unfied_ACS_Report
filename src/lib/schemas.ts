@@ -64,3 +64,11 @@ export const leadSubmissionFormSchema = z.object({
 });
 
 export type LeadSubmissionForm = z.infer<typeof leadSubmissionFormSchema>;
+
+export const projectTypeMasterSchema = z.object({
+  id: z.string().uuid().optional(), // UUID, optional for insert
+  type_name: z.string().min(1, { message: "Type Name is required." }).max(255, { message: "Type Name cannot exceed 255 characters." }),
+  created_at: z.string().optional(), // Read-only, handled by Supabase
+});
+
+export type ProjectTypeMaster = z.infer<typeof projectTypeMasterSchema>;

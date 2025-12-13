@@ -3,7 +3,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Briefcase, FileText, Users, Palette } from "lucide-react"; // Import icons
+import { LayoutDashboard, Briefcase, FileText, Users, Palette, FolderKanban } from "lucide-react"; // Import FolderKanban icon
 
 const Sidebar = () => {
   const navItems = [
@@ -12,6 +12,7 @@ const Sidebar = () => {
     { name: "Artwork Log", path: "/artwork-log", icon: FileText },
     { name: "Designer Master", path: "/designer-master", icon: Users },
     { name: "Artwork Type Master", path: "/artwork-type-master", icon: Palette },
+    { name: "Project Type Master", path: "/project-type-master", icon: FolderKanban }, // New nav item
   ];
 
   return (
