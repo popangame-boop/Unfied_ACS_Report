@@ -53,7 +53,7 @@ export const SessionContextProvider: React.FC<{ children: React.ReactNode }> = (
   }, [navigate, location.pathname]);
 
   return (
-    <SessionContext.Provider value={{ session: session, isLoading: isLoading }}>
+    <SessionContext.Provider value={ { session: session, isLoading: isLoading } }>
       {children}
     </SessionContext.Provider>
   );
