@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { jobMasterSchema, JobMaster } from "@/lib/schemas";
+import { jobMasterSchema, JobMaster, ProjectTypeMaster } from "@/lib/schemas"; // Import ProjectTypeMaster
 import { supabase } from "@/integrations/supabase/client";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -49,6 +49,15 @@ const fetchDesigners = async (): Promise<string[]> => {
     throw new Error(error.message);
   }
   return data.map((item) => item.DesignerName);
+};
+
+// New fetch function for Project Types
+const fetchProjectTypes = async (): Promise<string[]> => {
+  const { data, error } = await supabase.from("project_type_master").select("type_name");
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data.map((item) => item.type_name);
 };
 
 const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
@@ -77,6 +86,11 @@ const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
   const { data: designers, isLoading: isLoadingDesigners } = useQuery<string[], Error>({
     queryKey: ["designers"],
     queryFn: fetchDesigners,
+  });
+
+  const { data: projectTypes, isLoading: isLoadingProjectTypes } = useQuery<string[], Error>({
+    queryKey: ["project_types"],
+    queryFn: fetchProjectTypes,
   });
 
   const onSubmit = async (values: JobMaster) => {
@@ -109,7 +123,6 @@ const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const projectTypes = ["Event", "Travel", "Wellness", "Other"];
   const leadGrades = ["A", "B", "C", "D"];
 
   return (
@@ -192,11 +205,15 @@ const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {projectTypes.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
+                        {isLoadingProjectTypes ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : (
+                          projectTypes?.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -216,11 +233,15 @@ const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {designers?.map((designer) => (
-                          <SelectItem key={designer} value={designer}>
-                            {designer}
-                          </SelectItem>
-                        ))}
+                        {isLoadingDesigners ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : (
+                          designers?.map((designer) => (
+                            <SelectItem key={designer} value={designer}>
+                              {designer}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
