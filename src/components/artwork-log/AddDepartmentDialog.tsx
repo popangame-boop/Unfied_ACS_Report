@@ -50,9 +50,10 @@ const AddDepartmentDialog: React.FC<AddDepartmentDialogProps> = ({
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Fetch both 'id' and 'DepartmentList' to correctly identify and update the row
     const { data: currentLookup, error: fetchError } = await supabase
       .from("system_lookup")
-      .select("DepartmentList")
+      .select("id, DepartmentList") // Select 'id' here
       .single();
 
     if (fetchError) {
@@ -72,7 +73,7 @@ const AddDepartmentDialog: React.FC<AddDepartmentDialogProps> = ({
     const { error: updateError } = await supabase
       .from("system_lookup")
       .update({ DepartmentList: updatedDepartmentList })
-      .eq("created_at", currentLookup.created_at); // Assuming created_at can act as a unique identifier for the single row
+      .eq("id", currentLookup.id); // Use 'id' for the update condition
 
     if (updateError) {
       showError(`Failed to add department: ${updateError.message}`);
