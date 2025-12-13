@@ -94,6 +94,11 @@ const AddJobForm: React.FC<AddJobFormProps> = ({ onSuccess }) => {
   });
 
   const onSubmit = async (values: JobMaster) => {
+    if (selectedCategory === "Project" && values.ProjectType && !projectTypes?.includes(values.ProjectType)) {
+      form.setError("ProjectType", { message: "Selected Project Type does not exist." });
+      return;
+    }
+
     const { data, error } = await supabase.from("job_master").insert([
       {
         JobID: values.JobID,

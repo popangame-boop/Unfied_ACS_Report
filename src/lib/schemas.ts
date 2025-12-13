@@ -16,6 +16,14 @@ export const jobMasterSchema = z.object({
   ClientName: z.string().optional().nullable(), // For 'Lead' category
   CustomBrief: z.string().optional().nullable(), // For 'Lead' category
   LinkOnedrive: z.string().optional().nullable(), // For 'Lead' category
+}).superRefine((data, ctx) => {
+  if (data.Category === "Project" && !data.ProjectType) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Project Type is required for 'Project' category.",
+      path: ["ProjectType"],
+    });
+  }
 });
 
 export type JobMaster = z.infer<typeof jobMasterSchema>;
