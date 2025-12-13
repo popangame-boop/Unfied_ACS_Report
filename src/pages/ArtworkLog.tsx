@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, differenceInMinutes, differenceInHours } from "date-fns";
-import { PencilIcon, Trash2Icon, SearchIcon } from "lucide-react";
+import { PencilIcon, Trash2Icon, SearchIcon, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,12 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import type { ArtworkLog } from "@/lib/schemas";
 import AddArtworkLogForm from "@/components/artwork-log/AddArtworkLogForm";
 import EditArtworkLogForm from "@/components/artwork-log/EditArtworkLogForm";
 import DeleteArtworkLogDialog from "@/components/artwork-log/DeleteArtworkLogDialog";
+import AddDepartmentDialog from "@/components/artwork-log/AddDepartmentDialog"; // Import the new dialog
 import { showLoading, dismissToast } from "@/utils/toast";
 
 const fetchArtworkLogs = async (): Promise<ArtworkLog[]> => {
@@ -79,7 +80,7 @@ const fetchDepartmentList = async (): Promise<string[]> => {
   const { data, error } = await supabase
     .from("system_lookup")
     .select("DepartmentList")
-    .single(); // Assuming there's only one row for system lookups
+    .single();
   if (error) {
     throw new Error(error.message);
   }
@@ -102,6 +103,7 @@ const ArtworkLog = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false); // New state for add department modal
   const [selectedArtworkLog, setSelectedArtworkLog] = useState<ArtworkLog | null>(null);
   const [artworkLogToDeleteId, setArtworkLogToDeleteId] = useState<number | null>(null);
 
@@ -142,7 +144,11 @@ const ArtworkLog = () => {
     queryFn: fetchDesigners,
   });
 
-  const { data: departmentList, isLoading: isLoadingDepartmentList } = useQuery<string[], Error>({
+  const {
+    data: departmentList,
+    isLoading: isLoadingDepartmentList,
+    refetch: refetchDepartmentList, // Add refetch for department list
+  } = useQuery<string[], Error>({
     queryKey: ["departmentList"],
     queryFn: fetchDepartmentList,
   });
@@ -172,6 +178,11 @@ const ArtworkLog = () => {
     setIsDeleteModalOpen(false);
     setArtworkLogToDeleteId(null);
     refetchArtworkLogs();
+  };
+
+  const handleAddDepartmentSuccess = () => {
+    setIsAddDepartmentModalOpen(false);
+    refetchDepartmentList(); // Refetch department list after adding a new one
   };
 
   const filteredArtworkLogs = useMemo(() => {
@@ -215,19 +226,29 @@ const ArtworkLog = () => {
     <div className="flex-1">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Artwork Log</h1>
-        <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsAddModalOpen(true)} className="bg-vibrant-purple hover:bg-vibrant-purple/90 text-white rounded-md shadow-sm">Add Artwork Log</Button>
-          </DialogTrigger>
-          <AddArtworkLogForm
-            onSuccess={handleAddSuccess}
-            jobIds={jobIds || []}
-            categories={categories || []}
-            artworkTypes={artworkTypes || []}
-            designers={designers || []}
-            departmentList={departmentList || []}
-          />
-        </Dialog>
+        <div className="flex space-x-4">
+          <Dialog open={isAddDepartmentModalOpen} onOpenChange={setIsAddDepartmentModalOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsAddDepartmentModalOpen(true)} variant="outline" className="rounded-md shadow-sm">
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Department
+              </Button>
+            </DialogTrigger>
+            <AddDepartmentDialog open={isAddDepartmentModalOpen} onOpenChange={setIsAddDepartmentModalOpen} onSuccess={handleAddDepartmentSuccess} />
+          </Dialog>
+          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsAddModalOpen(true)} className="bg-vibrant-purple hover:bg-vibrant-purple/90 text-white rounded-md shadow-sm">Add Artwork Log</Button>
+            </DialogTrigger>
+            <AddArtworkLogForm
+              onSuccess={handleAddSuccess}
+              jobIds={jobIds || []}
+              categories={categories || []}
+              artworkTypes={artworkTypes || []}
+              designers={designers || []}
+              departmentList={departmentList || []}
+            />
+          </Dialog>
+        </div>
       </div>
 
       <Card className="rounded-xl shadow-subtle mb-6">
@@ -293,7 +314,7 @@ const ArtworkLog = () => {
                   <TableHead>Time Spent</TableHead>
                   <TableHead>Revision Count</TableHead>
                   <TableHead>Notes</TableHead>
-                  <TableHead>Dept Requester</TableHead> {/* New column header */}
+                  <TableHead>Dept Requester</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -328,7 +349,7 @@ const ArtworkLog = () => {
                       <TableCell className="max-w-[200px] truncate">
                         {log.Notes}
                       </TableCell>
-                      <TableCell>{log.DeptRequester || "N/A"}</TableCell> {/* Display DeptRequester */}
+                      <TableCell>{log.DeptRequester || "N/A"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
                           <Button
