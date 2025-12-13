@@ -10,9 +10,11 @@ import JobMaster from "./pages/JobMaster";
 import ArtworkLog from "./pages/ArtworkLog";
 import DesignerMaster from "./pages/DesignerMaster";
 import ArtworkTypeMaster from "./pages/ArtworkTypeMaster";
-import LeadSubmission from "./pages/LeadSubmission"; // Import the new LeadSubmission page
-import ProjectTypeMaster from "./pages/ProjectTypeMaster"; // Import the new ProjectTypeMaster page
+import LeadSubmission from "./pages/LeadSubmission";
+import ProjectTypeMaster from "./pages/ProjectTypeMaster";
 import Layout from "./components/Layout";
+import Login from "./pages/Login"; // Import the new Login page
+import { SessionContextProvider } from "./integrations/supabase/auth"; // Import SessionContextProvider
 
 const queryClient = new QueryClient();
 
@@ -22,20 +24,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} /> {/* Index will redirect to /dashboard */}
-          <Route path="/lead-submission" element={<LeadSubmission />} /> {/* Public Lead Submission Page */}
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/job-master" element={<JobMaster />} />
-            <Route path="/artwork-log" element={<ArtworkLog />} />
-            <Route path="/designer-master" element={<DesignerMaster />} />
-            <Route path="/artwork-type-master" element={<ArtworkTypeMaster />} />
-            <Route path="/project-type-master" element={<ProjectTypeMaster />} /> {/* New route */}
-          </Route>
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <SessionContextProvider> {/* Wrap with SessionContextProvider */}
+          <Routes>
+            <Route path="/login" element={<Login />} /> {/* Login page */}
+            <Route path="/lead-submission" element={<LeadSubmission />} /> {/* Public Lead Submission Page */}
+            <Route path="/" element={<Index />} /> {/* Index will redirect to /dashboard if logged in, or /login if not */}
+            <Route element={<Layout />}> {/* Protected routes */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/job-master" element={<JobMaster />} />
+              <Route path="/artwork-log" element={<ArtworkLog />} />
+              <Route path="/designer-master" element={<DesignerMaster />} />
+              <Route path="/artwork-type-master" element={<ArtworkTypeMaster />} />
+              <Route path="/project-type-master" element={<ProjectTypeMaster />} />
+            </Route>
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </SessionContextProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
